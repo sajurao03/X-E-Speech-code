@@ -39,6 +39,7 @@ _ = utils.load_checkpoint("/kaggle/input/checkpoints/G_450000.pth", net_g, None)
 
 def tts_en(text_str,ref_wav_path):
     src_wav=text_str
+    print(f'src wav: {src_wav} and ref wav path: {ref_wav_path}')
     # weo_filename = src_wav.replace(".wav", "_largev2ppg.npy")
     # dataset/vctk/p225/p225_001.wav
     weo_filename = src_wav.split('/vctk/p225')[0]+'/vctknew'+src_wav.split('/vctk/p225')[1].replace(".wav", "_largev2ppg.npy")
