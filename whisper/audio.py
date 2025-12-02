@@ -62,7 +62,13 @@ def mel_filters(device, n_mels: int = N_MELS) -> torch.Tensor:
         )
     """
     assert n_mels == 80, f"Unsupported n_mels: {n_mels}"
-    return torch.from_numpy(librosa_mel_fn(sr=SAMPLE_RATE,n_fft=N_FFT,n_mels=n_mels)).to(device)
+    mel = librosa.filters.mel(
+        sr=SAMPLE_RATE,
+        n_fft=N_FFT,
+        n_mels=n_mels,
+    )
+    return torch.from_numpy(mel).to(device)
+
 
 
 def log_mel_spectrogram(audio: Union[str, np.ndarray, torch.Tensor], n_mels: int = N_MELS):
