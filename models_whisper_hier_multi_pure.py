@@ -669,6 +669,8 @@ class SynthesizerTrn(nn.Module):
     self.upsample_kernel_sizes = upsample_kernel_sizes
     self.segment_size = segment_size
     self.gin_channels = gin_channels
+  
+
 
     self.use_sdp = use_sdp
     n_langs=2
@@ -681,7 +683,8 @@ class SynthesizerTrn(nn.Module):
         kernel_size,
         p_dropout)
     self.dec = Generator(inter_channels, resblock, resblock_kernel_sizes, resblock_dilation_sizes, upsample_rates, upsample_initial_channel, upsample_kernel_sizes, gin_channels=gin_channels)
-
+    # Prompt conditioning layer (128 → decoder channel)
+    self.prompt_fc = nn.Linear(128, upsample_initial_channel)
     self.enc_q = PosteriorEncoder(80, inter_channels, hidden_channels, 5, 1, 16, gin_channels=gin_channels)
     self.enc_whisper = PosteriorEncoder(1280, inter_channels, hidden_channels, 5, 1, 16, gin_channels=gin_channels)
     
@@ -781,22 +784,37 @@ class SynthesizerTrn(nn.Module):
     o = self.dec((z * y_mask)[:,:,:max_len], g=g)
     return o, attn, y_mask, (z, z_p, m_p, logs_p)
   
-  def voice_conversion_new(self, weo,weo_lengths, mel,lang,max_len=None):
+  def voice_conversion_prompt(self, weo, weo_lengths, mel, prompt_emb, lang, max_len):
+    # language embedding
     lang = self.lang_emb_g(lang).unsqueeze(-1)
 
-    g_raw = self.enc_spk(mel.transpose(1,2))
+    # speaker embedding
+    g_raw = self.enc_spk(mel.transpose(1, 2))
     g = g_raw.unsqueeze(-1)
 
+    # 1. Whisper encode PPGs
     z_weo, m_q_weo, logs_q_weo, y_mask_weo = self.enc_whisper(weo, weo_lengths, g=lang)
+
+    # 2. PROMPT CONDITIONING
+    if prompt_emb is not None:
+        # prompt_emb : (B,128)
+        prompt_cond = self.prompt_fc(prompt_emb)      # (B, C)
+        prompt_cond = prompt_cond.unsqueeze(-1)       # (B, C, 1)
+        prompt_cond = prompt_cond.repeat(1, 1, z_weo.size(2))  # (B, C, T)
+        z_weo = z_weo + prompt_cond
+
+    # 3. Whisper latent → phoneme latent
     z_p = self.flow_text_to_whisper(z_weo, y_mask_weo, g=lang)
     z_weo_hat = self.flow_text_to_whisper(z_p, y_mask_weo, g=lang, reverse=True)
-    # if z_weo_hat.equal(z_weo):
-    #    print("z_weo_hat!=z_weo")
-    # print(torch.equal(z_weo_hat,z_weo))
-    # print(z_weo.size(),z_weo_hat.size())
-    z=self.flow_whisper_to_spec(z_weo_hat, y_mask_weo, g=g, reverse=True)
-    o = self.dec((z * y_mask_weo)[:,:,:max_len], g=g)
+
+    # 4. Phoneme latent → spectrogram latent
+    z = self.flow_whisper_to_spec(z_weo_hat, y_mask_weo, g=g, reverse=True)
+
+    # 5. Decode audio
+    o = self.dec((z * y_mask_weo)[:, :, :max_len], g=g)
+
     return o, y_mask_weo, (z, z_weo, m_q_weo, logs_q_weo)
+
   
   def vocoder(self, spec,spec_lengths, mel,max_len=None):
     
@@ -984,4 +1002,3 @@ class SynthesizerTrn_3(nn.Module):
     
     o = self.dec((z_weo * y_mask_weo)[:,:,:max_len], g=g)
     return o, y_mask_weo#, (z, z_weo, m_q_weo, logs_q_weo)
-
