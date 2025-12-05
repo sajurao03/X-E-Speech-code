@@ -42,7 +42,8 @@ def tts_en(text_str,ref_wav_path):
     print(f'src wav: {src_wav} and ref wav path: {ref_wav_path}')
     # weo_filename = src_wav.replace(".wav", "_largev2ppg.npy")
     # dataset/vctk/p225/p225_001.wav
-    weo_filename = src_wav.split('/vctk/p225')[0]+'/vctknew'+src_wav.split('/vctk/p225')[1].replace(".wav", "_largev2ppg.npy")
+    # /kaggle/input/data-esd/p225_001.wav"
+    weo_filename = '/kaggle/working/vctknew'+src_wav.split('/data-esd')[1].replace(".wav", "_largev2ppg.npy")
     print(weo_filename)
     weo_filename = weo_filename.replace("/ESD_16k/","/ESD_16k_largev2/")
     weo =torch.from_numpy(np.load(weo_filename))
