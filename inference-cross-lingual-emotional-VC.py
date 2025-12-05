@@ -110,7 +110,7 @@ phone_text=[
     "/kaggle/input/data-esd/p225_004.wav",
 ]
 spk_list=[
-    "/kaggle/input/new-data/0001_000351.wav
+    "/kaggle/input/new-data/0001_000351.wav",
     "/kaggle/input/new-data/0001_000352.wav",
     "/kaggle/input/new-data/0001_000353.wav",
     "/kaggle/input/new-data/0001_000354.wav",
