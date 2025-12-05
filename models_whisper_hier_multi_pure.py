@@ -684,7 +684,7 @@ class SynthesizerTrn(nn.Module):
         p_dropout)
     self.dec = Generator(inter_channels, resblock, resblock_kernel_sizes, resblock_dilation_sizes, upsample_rates, upsample_initial_channel, upsample_kernel_sizes, gin_channels=gin_channels)
     # Prompt conditioning layer (128 → decoder channel)
-    self.prompt_fc = nn.Linear(128, upsample_initial_channel)
+    self.prompt_fc = nn.Linear(128, inter_channels)   # 128 → 192
     self.enc_q = PosteriorEncoder(80, inter_channels, hidden_channels, 5, 1, 16, gin_channels=gin_channels)
     self.enc_whisper = PosteriorEncoder(1280, inter_channels, hidden_channels, 5, 1, 16, gin_channels=gin_channels)
     
@@ -797,10 +797,12 @@ class SynthesizerTrn(nn.Module):
 
     # 2. PROMPT CONDITIONING
     if prompt_emb is not None:
-        # prompt_emb : (B,128)
-        prompt_cond = self.prompt_fc(prompt_emb)      # (B, C)
-        prompt_cond = prompt_cond.unsqueeze(-1)       # (B, C, 1)
-        prompt_cond = prompt_cond.repeat(1, 1, z_weo.size(2))  # (B, C, T)
+        prompt_cond = self.prompt_fc(prompt_emb)   # (B,192)
+        # reshape to (B,192,1)
+        prompt_cond = prompt_cond.unsqueeze(-1)
+        # broadcast across time dimension
+        prompt_cond = prompt_cond.repeat(1, 1, z_weo.shape[-1])   # (B,192,T)
+        # inject into whisper latent
         z_weo = z_weo + prompt_cond
 
     # 3. Whisper latent → phoneme latent

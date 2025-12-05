@@ -104,16 +104,16 @@ def tts_en(text_str,ref_wav_path):
 count=0
 from tqdm import tqdm
 phone_text=[
-    "dataset/vctk/p225/p225_001.wav",
-    "dataset/vctk/p225/p225_002.wav",
-    "dataset/vctk/p225/p225_003.wav",
-    "dataset/vctk/p225/p225_004.wav",
+    "/kaggle/input/data-esd/p225_001.wav",
+    "/kaggle/input/data-esd/p225_002.wav",
+    "/kaggle/input/data-esd/p225_003.wav",
+    "d/kaggle/input/data-esd/p225_004.wav",
 ]
 spk_list=[
-    "dataset/ESD/0001/Angry/0001_000351.wav",
-    "dataset/ESD/0001/Angry/0001_000352.wav",
-    "dataset/ESD/0001/Angry/0001_000353.wav",
-    "dataset/ESD/0001/Angry/0001_000354.wav",
+    "/kaggle/input/new-data/0001_000351.wav
+    "/kaggle/input/new-data/0001_000352.wav",
+    "/kaggle/input/new-data/0001_000353.wav",
+    "/kaggle/input/new-data/0001_000354.wav",
 ]
 for text in tqdm(phone_text):
     tmp=0    
